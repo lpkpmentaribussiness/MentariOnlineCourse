@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, CirclePlay, FileCheck2, Headphones, LockKeyhole } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { BunnyVideoPlayer } from "@/components/bunny-video-player";
 import { learningApps } from "@/lib/course-catalog";
 import { formatCurrency } from "@/lib/format";
 import { getPublicCourse } from "@/lib/data";
@@ -38,7 +39,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
       <section className="section course-detail-band">
         <div className="shell detail-grid">
-          <article><CirclePlay /><h2>Coba materi pertama gratis</h2><p>Kenali gaya belajar dan kualitas panduan sebelum mendaftar.</p>{previewLessons.length ? previewLessons.map((lesson) => <div className="preview-lesson" key={lesson.id}><span>{lesson.application}</span><strong>{lesson.title}</strong>{lesson.video_url ? <iframe src={lesson.video_url} title={lesson.title} allowFullScreen /> : <div className="video-placeholder"><CirclePlay /><span>Video preview siap dihubungkan ke Bunny Stream</span></div>}</div>) : <div className="video-placeholder"><CirclePlay /><span>Video preview siap dihubungkan ke Bunny Stream</span></div>}</article>
+          <article><CirclePlay /><h2>Coba materi pertama gratis</h2><p>Kenali gaya belajar dan kualitas panduan sebelum mendaftar.</p>{previewLessons.length ? previewLessons.map((lesson) => <div className="preview-lesson" key={lesson.id}><span>{lesson.application}</span><strong>{lesson.title}</strong><BunnyVideoPlayer url={lesson.video_url} title={lesson.title} emptyMessage="Video preview siap dihubungkan ke Bunny Stream" /></div>) : <div className="video-placeholder"><CirclePlay /><span>Video preview siap dihubungkan ke Bunny Stream</span></div>}</article>
           <div className="feature-stack">
             <div><FileCheck2 /><span><strong>Ujian berbasis file</strong><small>DOCX, XLSX, PPTX, atau PDF hingga 20 MB</small></span></div>
             <div><Headphones /><span><strong>Dibimbing saat buntu</strong><small>WhatsApp, AnyDesk, dan audio dengan pengajar</small></span></div>

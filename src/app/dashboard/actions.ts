@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
+import { normalizeBunnyEmbedUrl } from "@/lib/bunny-stream";
 import { maskParticipantName } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -125,10 +126,14 @@ export async function updateCourseStatus(formData: FormData) {
 
 export async function createLesson(formData: FormData) {
   await requireProfile(["admin", "instructor"]);
+  const courseId = value(formData, "courseId");
   const application = z.enum(["Word", "Excel", "PowerPoint"]).parse(value(formData, "application"));
+  const videoUrlInput = value(formData, "videoUrl");
+  const videoUrl = normalizeBunnyEmbedUrl(videoUrlInput);
+  if (videoUrlInput && !videoUrl) dashboardMessage("/dashboard/admin/kursus", "Gunakan URL embed resmi Bunny Stream dari player.mediadelivery.net", true);
   const supabase = await createClient();
   const { error } = await supabase.from("lessons").insert({
-    course_id: value(formData, "courseId"), application, title: value(formData, "title"), description: value(formData, "description"), instructions: value(formData, "instructions"), video_url: value(formData, "videoUrl") || null, exercise_file_url: value(formData, "exerciseFileUrl") || null, position: Number(value(formData, "position")), is_exam: value(formData, "isExam") === "true", is_preview: value(formData, "isPreview") === "true",
+    course_id: courseId, application, title: value(formData, "title"), description: value(formData, "description"), instructions: value(formData, "instructions"), video_url: videoUrl, exercise_file_url: value(formData, "exerciseFileUrl") || null, position: Number(value(formData, "position")), is_exam: value(formData, "isExam") === "true", is_preview: value(formData, "isPreview") === "true",
   });
   if (error) dashboardMessage("/dashboard/admin/kursus", error.message, true);
   revalidatePath("/dashboard/admin/kursus");
@@ -139,8 +144,11 @@ export async function updateLesson(formData: FormData) {
   const lessonId = value(formData, "lessonId");
   const courseId = value(formData, "courseId");
   const application = z.enum(["Word", "Excel", "PowerPoint"]).parse(value(formData, "application"));
+  const videoUrlInput = value(formData, "videoUrl");
+  const videoUrl = normalizeBunnyEmbedUrl(videoUrlInput);
+  if (videoUrlInput && !videoUrl) dashboardMessage(`/dashboard/admin/kursus/${courseId}`, "Gunakan URL embed resmi Bunny Stream dari player.mediadelivery.net", true);
   const supabase = await createClient();
-  const { error } = await supabase.from("lessons").update({ application, title: value(formData, "title"), description: value(formData, "description"), instructions: value(formData, "instructions"), video_url: value(formData, "videoUrl") || null, exercise_file_url: value(formData, "exerciseFileUrl") || null, position: Number(value(formData, "position")), is_exam: value(formData, "isExam") === "true", is_preview: value(formData, "isPreview") === "true" }).eq("id", lessonId);
+  const { error } = await supabase.from("lessons").update({ application, title: value(formData, "title"), description: value(formData, "description"), instructions: value(formData, "instructions"), video_url: videoUrl, exercise_file_url: value(formData, "exerciseFileUrl") || null, position: Number(value(formData, "position")), is_exam: value(formData, "isExam") === "true", is_preview: value(formData, "isPreview") === "true" }).eq("id", lessonId);
   if (error) dashboardMessage(`/dashboard/admin/kursus/${courseId}`, error.message, true);
   dashboardMessage(`/dashboard/admin/kursus/${courseId}`, "Materi berhasil diperbarui");
 }
