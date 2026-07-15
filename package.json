@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "dotenvx run -f .env.local -- next dev",
-    "build": "dotenvx run -f .env.local -- next build",
+    "build": "dotenvx run -f .env.local --ignore=MISSING_ENV_FILE -- next build",
     "start": "dotenvx run -f .env.local -- next start",
     "lint": "eslint"
   },
