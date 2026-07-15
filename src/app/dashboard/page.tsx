@@ -15,13 +15,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const supabase = await createClient();
 
   if (profile.role === "admin") {
-    const [participants, pending, submissions, eligible] = await Promise.all([
+    const [participants, pending, submissions, activeEnrollments, exams, passedSubmissions, certificates] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "participant"),
       supabase.from("enrollments").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("submissions").select("id", { count: "exact", head: true }).eq("status", "submitted"),
-      supabase.from("enrollments").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("enrollments").select("id, course_id").eq("status", "active"),
+      supabase.from("lessons").select("id, course_id").eq("is_exam", true),
+      supabase.from("submissions").select("enrollment_id, lesson_id").eq("status", "passed"),
+      supabase.from("certificates").select("enrollment_id"),
     ]);
-    return <div><DashboardHeading eyebrow="Pusat kendali" title={`Selamat datang, ${profile.full_name.split(" ")[0]}`} description="Pantau operasional kursus dan tindak lanjuti pekerjaan yang menunggu." message={pesan} error={error} /><div className="metric-grid"><Metric icon={UsersRound} label="Total peserta" value={participants.count ?? 0} /><Metric icon={Clock3} label="Menunggu aktivasi" value={pending.count ?? 0} /><Metric icon={ClipboardCheck} label="Upload belum dinilai" value={submissions.count ?? 0} /><Metric icon={BadgeCheck} label="Enrollment aktif" value={eligible.count ?? 0} /></div><div className="action-grid"><ActionCard href="/dashboard/admin/peserta" icon={UsersRound} title="Verifikasi peserta" text="Aktifkan akses setelah pembayaran dikonfirmasi." /><ActionCard href="/dashboard/penilaian" icon={ClipboardCheck} title="Periksa ujian" text="Buka upload terbaru dan berikan status Lulus atau Revisi." /><ActionCard href="/dashboard/admin/sertifikat" icon={BadgeCheck} title="Terbitkan sertifikat" text="Pastikan seluruh ujian lulus lalu buat PDF bernomor unik." /></div></div>;
+    const issuedEnrollmentIds = new Set(certificates.data?.map((item) => item.enrollment_id));
+    const eligibleCount = (activeEnrollments.data ?? []).filter((enrollment) => {
+      if (issuedEnrollmentIds.has(enrollment.id)) return false;
+      const examIds = new Set(exams.data?.filter((exam) => exam.course_id === enrollment.course_id).map((exam) => exam.id));
+      if (!examIds.size) return false;
+      const passedIds = new Set(passedSubmissions.data?.filter((submission) => submission.enrollment_id === enrollment.id).map((submission) => submission.lesson_id));
+      return [...examIds].every((examId) => passedIds.has(examId));
+    }).length;
+    return <div><DashboardHeading eyebrow="Pusat kendali" title={`Selamat datang, ${profile.full_name.split(" ")[0]}`} description="Pantau operasional kursus dan tindak lanjuti pekerjaan yang menunggu." message={pesan} error={error} /><div className="metric-grid"><Metric icon={UsersRound} label="Total peserta" value={participants.count ?? 0} /><Metric icon={Clock3} label="Menunggu aktivasi" value={pending.count ?? 0} /><Metric icon={ClipboardCheck} label="Upload belum dinilai" value={submissions.count ?? 0} /><Metric icon={BadgeCheck} label="Sertifikat menunggu" value={eligibleCount} /></div><div className="action-grid"><ActionCard href="/dashboard/admin/peserta" icon={UsersRound} title="Verifikasi peserta" text="Aktifkan akses setelah pembayaran dikonfirmasi." /><ActionCard href="/dashboard/penilaian" icon={ClipboardCheck} title="Periksa ujian" text="Buka upload terbaru dan berikan status Lulus atau Revisi." /><ActionCard href="/dashboard/admin/sertifikat" icon={BadgeCheck} title="Terbitkan sertifikat" text="Pastikan seluruh ujian lulus lalu buat PDF bernomor unik." /></div></div>;
   }
 
   if (profile.role === "instructor") {

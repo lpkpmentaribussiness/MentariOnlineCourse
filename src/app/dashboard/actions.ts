@@ -34,23 +34,50 @@ export async function updateEnrollment(formData: FormData) {
   const enrollmentId = value(formData, "enrollmentId");
   const paymentId = value(formData, "paymentId");
   const status = z.enum(["pending", "active", "inactive"]).parse(value(formData, "status"));
+  const requestedPaymentStatus = z.enum(["pending", "verified", "rejected"]).parse(value(formData, "paymentStatus"));
+  const paymentStatus = status === "active" ? "verified" : requestedPaymentStatus;
+  const paymentNotes = value(formData, "paymentNotes");
   const supabase = await createClient();
+  if (status === "active" && !paymentId) dashboardMessage("/dashboard/admin/peserta", "Catatan pembayaran harus tersedia sebelum akses diaktifkan", true);
+
+  if (paymentId) {
+    const verified = paymentStatus === "verified";
+    const { error: paymentError } = await supabase.from("payments").update({
+      status: paymentStatus,
+      notes: paymentNotes || null,
+      verified_by: verified ? profile.id : null,
+      verified_at: verified ? new Date().toISOString() : null,
+    }).eq("id", paymentId);
+    if (paymentError) dashboardMessage("/dashboard/admin/peserta", paymentError.message, true);
+  }
+
   const payload = status === "active" ? { status, activated_by: profile.id, activated_at: new Date().toISOString() } : { status };
   const { error } = await supabase.from("enrollments").update(payload).eq("id", enrollmentId);
   if (error) dashboardMessage("/dashboard/admin/peserta", error.message, true);
-  if (paymentId) await supabase.from("payments").update({ status: status === "active" ? "verified" : "pending", verified_by: status === "active" ? profile.id : null, verified_at: status === "active" ? new Date().toISOString() : null }).eq("id", paymentId);
   revalidatePath("/dashboard/admin/peserta");
+  revalidatePath("/dashboard");
 }
 
 export async function updateParticipantProfile(formData: FormData) {
-  await requireProfile(["admin"]);
+  const profile = await requireProfile(["admin"]);
   const userId = value(formData, "userId");
   const role = z.enum(["admin", "instructor", "participant"]).parse(value(formData, "role"));
   const isActive = value(formData, "isActive") === "true";
+  if (userId === profile.id && (role !== "admin" || !isActive)) dashboardMessage("/dashboard/admin/peserta", "Admin yang sedang masuk tidak dapat menurunkan peran atau menonaktifkan akunnya sendiri", true);
   const supabase = await createClient();
   const { error } = await supabase.from("profiles").update({ role, is_active: isActive }).eq("id", userId);
   if (error) dashboardMessage("/dashboard/admin/peserta", error.message, true);
   revalidatePath("/dashboard/admin/peserta");
+}
+
+export async function updateCertificateVisibility(formData: FormData) {
+  await requireProfile(["admin"]);
+  const certificateId = value(formData, "certificateId");
+  const isPublic = value(formData, "isPublic") === "true";
+  const supabase = await createClient();
+  const { error } = await supabase.from("certificates").update({ is_public: isPublic }).eq("id", certificateId);
+  if (error) dashboardMessage("/dashboard/admin/sertifikat", error.message, true);
+  dashboardMessage("/dashboard/admin/sertifikat", isPublic ? "Validasi publik sertifikat diaktifkan" : "Validasi publik sertifikat dinonaktifkan");
 }
 
 export async function gradeSubmission(formData: FormData) {
