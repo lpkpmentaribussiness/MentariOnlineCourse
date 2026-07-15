@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const courses = await getPublicCourses();
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "6281269288060";
+  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "6281370007002";
 
   return (
     <main>
