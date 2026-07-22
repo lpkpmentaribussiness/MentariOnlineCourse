@@ -7,7 +7,7 @@ export const fallbackCourses = [
       "Fondasi Word, Excel, dan PowerPoint untuk belajar, bekerja, dan melamar pekerjaan.",
     description:
       "Kuasai keterampilan inti Microsoft Office melalui video terarah, latihan praktis, enam ujian, bimbingan remote, dan sertifikat resmi LPKP MENTARI.",
-    price: 1_500_000,
+    price: 500_000,
     level: "Dasar",
     status: "active",
   },
@@ -19,7 +19,7 @@ export const fallbackCourses = [
       "Naikkan kemampuan dokumen, pengolahan data, dan presentasi ke level profesional.",
     description:
       "Pelajari teknik lanjutan Word, Excel, dan PowerPoint dengan tugas berbasis kasus kerja, penilaian pengajar, bimbingan remote, dan sertifikat resmi.",
-    price: 1_500_000,
+    price: 500_000,
     level: "Lanjutan",
     status: "active",
   },
